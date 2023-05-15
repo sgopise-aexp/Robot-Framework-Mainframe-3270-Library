@@ -69,7 +69,7 @@ def test_open_connection_with_extra_args(mocker: MockerFixture, under_test: X327
     mocker.patch("Mainframe3270.py3270.Emulator.connect")
     under_test.open_connection("myhost", extra_args=extra_args)
 
-    Emulator.__init__.assert_called_with(True, 30.0, extra_args)
+    Emulator.__init__.assert_called_with(True, 30.0, extra_args, "2")
 
 
 def test_open_connection_with_port_from_argument_and_from_extra_args(
@@ -191,54 +191,11 @@ def test_contains_hostname_raises_ValueError(under_test: X3270):
             under_test._check_contains_hostname(session_file)
 
 
-@pytest.mark.parametrize(
-    "model",
-    [
-        "wc3270.model: 2",
-        "ws3270.model:2",
-        "x3270.model: 2",
-        "s3270.model: 2",
-        "*model:2",
-        "",
-    ],
-)
-def test_check_model(model: str, under_test: X3270):
-    with patch("builtins.open", mock_open(read_data=model)) as session_file:
-        under_test._check_model(session_file)
-
-
-@pytest.mark.parametrize(
-    ("model_string", "model"),
-    [
-        ("wc3270.model: 4", "4"),
-        ("ws3270.model:4", "4"),
-        ("x3270.model: 5", "5"),
-        ("s3270.model: 3279-4-E", "3279-4-E"),
-        ("*model: 3278-4", "3278-4"),
-    ],
-)
-def test_check_model_raises_ValueError(
-    model_string: str, model: SystemError, under_test: X3270
-):
-    with patch("builtins.open", mock_open(read_data=model_string)) as session_file:
-        with pytest.raises(
-            ValueError,
-            match=re.escape(
-                f'Robot-Framework-Mainframe-3270-Library currently only supports model "2", '
-                f'the model you specified in your session file was "{model}". '
-                f'Please change it to "2", using either the session wizard if you are on Windows, '
-                f'or by editing the model resource like this "*model: 2"'
-            ),
-        ):
-            under_test._check_model(session_file)
-
-
 def test_open_connection_from_session_file_registers_connection(
     mocker: MockerFixture, under_test: X3270
 ):
     mocker.patch("Mainframe3270.x3270.X3270._check_session_file_extension")
     mocker.patch("Mainframe3270.x3270.X3270._check_contains_hostname")
-    mocker.patch("Mainframe3270.x3270.X3270._check_model")
     mocker.patch("robot.utils.ConnectionCache.register")
     under_test.open_connection_from_session_file("session.wc3270")
 
@@ -251,7 +208,6 @@ def test_open_connection_from_session_file_registers_connection_with_alias(
 ):
     mocker.patch("Mainframe3270.x3270.X3270._check_session_file_extension")
     mocker.patch("Mainframe3270.x3270.X3270._check_contains_hostname")
-    mocker.patch("Mainframe3270.x3270.X3270._check_model")
     mocker.patch("robot.utils.ConnectionCache.register")
     under_test.open_connection_from_session_file("session.wc3270", "myalias")
 
@@ -264,7 +220,6 @@ def test_open_connection_from_session_file_returns_index(
 ):
     mocker.patch("Mainframe3270.x3270.X3270._check_session_file_extension")
     mocker.patch("Mainframe3270.x3270.X3270._check_contains_hostname")
-    mocker.patch("Mainframe3270.x3270.X3270._check_model")
     mocker.patch("robot.utils.ConnectionCache.register", return_value=1)
     index = under_test.open_connection_from_session_file("session.wc3270")
 
